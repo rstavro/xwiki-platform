@@ -73,7 +73,7 @@ public class DefaultWikiComponentManager implements WikiComponentManager
     private WikiComponentManagerContext wikiComponentManagerContext;
 
     /**
-     * Reference on all registered components.
+     * Map of registered components.
      */
     private Set<WikiComponent> registeredComponents = new HashSet<WikiComponent>();
     
@@ -81,10 +81,6 @@ public class DefaultWikiComponentManager implements WikiComponentManager
     @SuppressWarnings("unchecked")
     public void registerWikiComponent(WikiComponent component) throws WikiComponentException
     {
-        if (registeredComponents.contains(component)) {
-            throw new WikiComponentException("Component already registered. Try unregistering it first.");
-        }
-
         // Save current context information
         DocumentReference currentUserReference = this.wikiComponentManagerContext.getCurrentUserReference();
         EntityReference currentEntityReference = this.wikiComponentManagerContext.getCurrentEntityReference();
@@ -158,7 +154,7 @@ public class DefaultWikiComponentManager implements WikiComponentManager
 
         // Remove reference
         if (unregisteredComponent != null) {
-            this.registeredComponents.remove(unregisteredComponent);
+            this.registeredComponents.remove(reference);
         }
     }
 

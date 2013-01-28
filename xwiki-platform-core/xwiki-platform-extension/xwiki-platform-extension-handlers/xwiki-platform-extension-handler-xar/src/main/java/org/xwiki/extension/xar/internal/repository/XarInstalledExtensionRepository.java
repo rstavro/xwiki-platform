@@ -110,10 +110,10 @@ public class XarInstalledExtensionRepository extends AbstractCachedExtensionRepo
         this.observation.addListener(new EventListener()
         {
             @Override
-            public void onEvent(Event event, Object arg1, Object arg2)
+            public void onEvent(Event event, Object source, Object data)
             {
                 ExtensionEvent extensionEvent = (ExtensionEvent) event;
-                InstalledExtension extension = (InstalledExtension) arg1;
+                InstalledExtension extension = (InstalledExtension) source;
 
                 try {
                     if (extension.getType().equals(XarExtensionHandler.TYPE)) {
@@ -123,7 +123,7 @@ public class XarInstalledExtensionRepository extends AbstractCachedExtensionRepo
                         } else if (extensionEvent instanceof ExtensionInstalledEvent) {
                             addXarExtension(XarExtensionUtils.toWiki(extensionEvent.getNamespace()), extension);
                         } else {
-                            InstalledExtension previousExtension = (InstalledExtension) arg2;
+                            InstalledExtension previousExtension = (InstalledExtension) data;
                             removeXarExtension(XarExtensionUtils.toWiki(extensionEvent.getNamespace()),
                                 previousExtension.getId());
                             addXarExtension(XarExtensionUtils.toWiki(extensionEvent.getNamespace()), extension);

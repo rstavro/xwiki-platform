@@ -6,7 +6,7 @@
   <language/>
   <defaultLanguage/>
   <translation>0</translation>
-  <parent/>
+  <parent>Extension.WebHome</parent>
   <creator>xwiki:XWiki.Admin</creator>
   <author>xwiki:XWiki.Admin</author>
   <customClass/>
@@ -22,7 +22,7 @@
   <comment/>
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.0</syntaxId>
-  <hidden>false</hidden>
+  <hidden>true</hidden>
   <class>
     <name>ExtensionCode.RepositoryConfigClass</name>
     <customClass/>
@@ -50,7 +50,7 @@
       <customDisplay/>
       <disabled>0</disabled>
       <displayType>input</displayType>
-      <multiSelect>0</multiSelect>
+      <multiSelect>1</multiSelect>
       <name>validTypes</name>
       <number>2</number>
       <picker>0</picker>

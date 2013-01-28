@@ -27,7 +27,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
-import javax.inject.Inject;
 import javax.inject.Provider;
 
 import org.slf4j.LoggerFactory;
@@ -45,7 +44,7 @@ import org.xwiki.localization.TranslationBundleContext;
 import org.xwiki.localization.internal.AbstractCachedTranslationBundle;
 import org.xwiki.localization.internal.DefaultLocalizedTranslationBundle;
 import org.xwiki.localization.internal.DefaultTranslation;
-import org.xwiki.localization.internal.LocalizedBundle;
+import org.xwiki.localization.internal.LocalizedTranslationBundle;
 import org.xwiki.localization.message.TranslationMessage;
 import org.xwiki.localization.message.TranslationMessageParser;
 import org.xwiki.model.reference.DocumentReference;
@@ -65,55 +64,24 @@ import com.xpn.xwiki.doc.XWikiDocument;
  * @since 4.3M2
  */
 public abstract class AbstractDocumentTranslationBundle extends AbstractCachedTranslationBundle implements
-    TranslationBundle, DisposableCacheValue, Disposable
+    TranslationBundle, DisposableCacheValue, Disposable, EventListener
 {
     /**
      * The prefix to use in all wiki document based translations.
      */
     public static final String ID_PREFIX = "document:";
 
-    @Inject
     protected TranslationBundleContext bundleContext;
 
-    @Inject
     protected EntityReferenceSerializer<String> serializer;
 
-    @Inject
     protected Provider<XWikiContext> contextProvider;
 
-    @Inject
     private ObservationManager observation;
 
     protected TranslationMessageParser translationMessageParser;
 
     protected List<Event> events;
-
-    private EventListener listener = new EventListener()
-    {
-        @Override
-        public void onEvent(Event arg0, Object arg1, Object arg2)
-        {
-            if (arg0 instanceof WikiDeletedEvent) {
-                bundleCache.clear();
-            } else {
-                XWikiDocument document = (XWikiDocument) arg1;
-
-                bundleCache.remove(document.getLocale() != null ? document.getLocale() : Locale.ROOT);
-            }
-        }
-
-        @Override
-        public String getName()
-        {
-            return "localization.bundle." + getId();
-        }
-
-        @Override
-        public List<Event> getEvents()
-        {
-            return events;
-        }
-    };
 
     protected DocumentReference documentReference;
 
@@ -143,7 +111,7 @@ public abstract class AbstractDocumentTranslationBundle extends AbstractCachedTr
                 this.documentReference), new DocumentDeletedEvent(this.documentReference), new WikiDeletedEvent(
                 this.documentReference.getWikiReference().getName()));
 
-        this.observation.addListener(this.listener);
+        this.observation.addListener(this);
     }
 
     protected void setReference(DocumentReference reference)
@@ -153,7 +121,7 @@ public abstract class AbstractDocumentTranslationBundle extends AbstractCachedTr
         setId(ID_PREFIX + this.serializer.serialize(reference));
     }
 
-    protected LocalizedBundle loadDocumentLocaleBundle(Locale locale) throws Exception
+    protected LocalizedTranslationBundle loadDocumentLocaleBundle(Locale locale) throws Exception
     {
         XWikiContext context = this.contextProvider.get();
 
@@ -201,9 +169,9 @@ public abstract class AbstractDocumentTranslationBundle extends AbstractCachedTr
     }
 
     @Override
-    protected LocalizedBundle createBundle(Locale locale)
+    protected LocalizedTranslationBundle createBundle(Locale locale)
     {
-        LocalizedBundle localeBundle;
+        LocalizedTranslationBundle localeBundle;
         try {
             localeBundle = loadDocumentLocaleBundle(locale);
         } catch (Exception e) {
@@ -215,9 +183,37 @@ public abstract class AbstractDocumentTranslationBundle extends AbstractCachedTr
         return localeBundle;
     }
 
+    // DisposableCacheValue Disposable
+
     @Override
     public void dispose()
     {
-        this.observation.removeListener(this.listener.getName());
+        this.observation.removeListener(getName());
+    }
+
+    // EventListener
+
+    @Override
+    public void onEvent(Event arg0, Object arg1, Object arg2)
+    {
+        if (arg0 instanceof WikiDeletedEvent) {
+            bundleCache.clear();
+        } else {
+            XWikiDocument document = (XWikiDocument) arg1;
+
+            bundleCache.remove(document.getLocale() != null ? document.getLocale() : Locale.ROOT);
+        }
+    }
+
+    @Override
+    public String getName()
+    {
+        return "localization.bundle." + getId();
+    }
+
+    @Override
+    public List<Event> getEvents()
+    {
+        return events;
     }
 }

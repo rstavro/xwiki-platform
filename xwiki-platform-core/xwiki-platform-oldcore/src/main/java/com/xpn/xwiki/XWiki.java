@@ -144,6 +144,7 @@ import com.xpn.xwiki.internal.event.XObjectPropertyDeletedEvent;
 import com.xpn.xwiki.internal.event.XObjectPropertyEvent;
 import com.xpn.xwiki.internal.event.XObjectPropertyUpdatedEvent;
 import com.xpn.xwiki.internal.event.XObjectUpdatedEvent;
+import com.xpn.xwiki.internal.template.PrivilegedTemplateRenderer;
 import com.xpn.xwiki.objects.BaseObject;
 import com.xpn.xwiki.objects.PropertyInterface;
 import com.xpn.xwiki.objects.classes.BaseClass;
@@ -344,6 +345,9 @@ public class XWiki implements EventListener
         EntityReferenceResolver.TYPE_STRING, "relative");
 
     private SyntaxFactory syntaxFactory = Utils.getComponent((Type) SyntaxFactory.class);
+
+    /** Renderer for elevating privileges for selected file system templates. */
+    private PrivilegedTemplateRenderer privilegedTemplateRenderer = Utils.getComponent(PrivilegedTemplateRenderer.class);
 
     private XWikiURLBuilder entityXWikiURLBuilder = Utils.getComponent((Type) XWikiURLBuilder.class, "entity");
 
@@ -1762,7 +1766,7 @@ public class XWiki implements EventListener
         }
 
         String content = getResourceContent(template);
-        return XWikiVelocityRenderer.evaluate(content, template, (VelocityContext) context.get("vcontext"), context);
+        return privilegedTemplateRenderer.evaluateTemplate(content, template);
     }
 
     public String parseTemplate(String template, String skin, XWikiContext context)
@@ -2201,7 +2205,7 @@ public class XWiki implements EventListener
                 return result;
             }
         } catch (Exception e) {
-            LOGGER.warn("Exception while getting wiki preference [" + prefname + "]", e);
+            LOGGER.debug("Exception while getting wiki preference [" + prefname + "]", e);
         }
         return Param(fallback_param, default_value);
     }
@@ -2237,18 +2241,14 @@ public class XWiki implements EventListener
                     doc.getXObject(xwikiPreferencesReference, "default_language", context.getLanguage(), true);
                 String result = "";
                 if (object != null) {
-                    try {
-                        result = object.getStringValue(preference);
-                    } catch (Exception e) {
-                        LOGGER.warn("Exception while getting space preference [" + preference + "]", e);
-                    }
+                    result = object.getStringValue(preference);
                 }
 
                 if (!result.equals("")) {
                     return result;
                 }
             } catch (Exception e) {
-                LOGGER.warn("Exception while getting space preference [" + preference + "]", e);
+                LOGGER.debug("Exception while getting space preference [" + preference + "]", e);
             }
         }
         return getXWikiPreference(preference, defaultValue, context);
@@ -2266,7 +2266,7 @@ public class XWiki implements EventListener
                 }
             }
         } catch (Exception e) {
-            LOGGER.warn("Exception while getting user preference [" + prefname + "]", e);
+            LOGGER.debug("Exception while getting user preference [" + prefname + "]", e);
         }
 
         return getSpacePreference(prefname, context);
@@ -3160,6 +3160,14 @@ public class XWiki implements EventListener
 
         try {
             sender = getXWikiPreference("admin_email", context);
+            if (StringUtils.isBlank(sender)) {
+                String server = context.getRequest().getServerName();
+                if (server.matches("\\[.*\\]|(\\d{1,3}+\\.){3}+\\d{1,3}+")) {
+                    sender = "noreply@domain.net";
+                } else {
+                    sender = "noreply@" + server;
+                }
+            }
             content = getXWikiPreference(contentfield, context);
         } catch (Exception e) {
             throw new XWikiException(XWikiException.MODULE_XWIKI_EMAIL,

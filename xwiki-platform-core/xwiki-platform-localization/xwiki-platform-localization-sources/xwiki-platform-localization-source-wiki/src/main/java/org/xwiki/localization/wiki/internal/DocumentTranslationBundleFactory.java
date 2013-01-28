@@ -49,6 +49,7 @@ import org.xwiki.component.phase.Disposable;
 import org.xwiki.component.phase.Initializable;
 import org.xwiki.component.phase.InitializationException;
 import org.xwiki.localization.TranslationBundle;
+import org.xwiki.localization.TranslationBundleContext;
 import org.xwiki.localization.TranslationBundleDoesNotExistsException;
 import org.xwiki.localization.TranslationBundleFactory;
 import org.xwiki.localization.message.TranslationMessageParser;
@@ -78,16 +79,21 @@ import com.xpn.xwiki.objects.BaseObject;
 import com.xpn.xwiki.objects.StringProperty;
 
 /**
- * Generate and manager wiki document based translations bundles.
+ * Generate and manage wiki document based translations bundles.
  * 
  * @version $Id$
  * @since 4.3M2
  */
 @Component
-@Named("document")
+@Named(DocumentTranslationBundleFactory.ID)
 @Singleton
 public class DocumentTranslationBundleFactory implements TranslationBundleFactory, Initializable, Disposable
 {
+    /**
+     * The identifier of this {@link TranslationBundleFactory}.
+     */
+    public final static String ID = "document";
+
     private static final RegexEntityReference TRANSLATIONOBJET = new RegexEntityReference(Pattern.compile("[^:]+:"
         + TranslationDocumentModel.TRANSLATIONCLASS_REFERENCE_STRING + "\\[\\d*\\]"), EntityType.OBJECT);
 
@@ -133,6 +139,12 @@ public class DocumentTranslationBundleFactory implements TranslationBundleFactor
 
     @Inject
     private AuthorizationManager authorizationManager;
+
+    /**
+     * Used to access the current bundles.
+     */
+    @Inject
+    private TranslationBundleContext bundleContext;
 
     private Cache<TranslationBundle> bundlesCache;
 
@@ -206,7 +218,7 @@ public class DocumentTranslationBundleFactory implements TranslationBundleFactor
         try {
             Query query =
                 this.queryManager.createQuery(String.format(
-                    "select doc.space, doc.name from Document doc, doc.object(%s) as translation",
+                    "select distinct doc.space, doc.name from Document doc, doc.object(%s) as translation",
                     TranslationDocumentModel.TRANSLATIONCLASS_REFERENCE_STRING), Query.XWQL);
 
             query.setWiki(wiki);
@@ -221,7 +233,7 @@ public class DocumentTranslationBundleFactory implements TranslationBundleFactor
                 registerTranslationBundle(document);
             }
         } catch (Exception e) {
-            this.logger.error("Failed to load eexisting translations", e);
+            this.logger.error("Failed to load existing translations", e);
         }
     }
 
@@ -253,6 +265,7 @@ public class DocumentTranslationBundleFactory implements TranslationBundleFactor
                 bundle = this.bundlesCache.get(uid);
                 if (bundle == null) {
                     bundle = createDocumentBundle(documentReference);
+                    this.bundlesCache.set(uid, bundle);
                 }
             }
         }
@@ -398,6 +411,8 @@ public class DocumentTranslationBundleFactory implements TranslationBundleFactor
                 createComponentDescriptor(document.getDocumentReference());
 
             getComponentManager(document, scope, true).registerComponent(descriptor, bundle);
+
+            this.bundleContext.addBundle(bundle);
         }
     }
 
@@ -460,7 +475,7 @@ public class DocumentTranslationBundleFactory implements TranslationBundleFactor
                 hint = "user:" + this.serializer.serialize(document.getAuthorReference());
                 break;
             default:
-                hint = "root";
+                hint = null;
                 break;
         }
 

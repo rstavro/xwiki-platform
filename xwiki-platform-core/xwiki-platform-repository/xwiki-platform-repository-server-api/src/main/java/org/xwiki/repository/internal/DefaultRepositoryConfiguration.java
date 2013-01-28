@@ -39,18 +39,28 @@ import com.xpn.xwiki.objects.BaseObject;
  * Default implementation of {@link RepositoryConfiguration}.
  * 
  * @version $Id$
- * @since 4.4M2
+ * @since 4.5M1
  */
 @Component
 public class DefaultRepositoryConfiguration implements RepositoryConfiguration
 {
+    /**
+     * Gives access to the current {@link XWikiContext}.
+     */
     @Inject
     private Provider<XWikiContext> xcontextProvider;
 
+    /**
+     * Used to create an absolute reference from a relative one.
+     */
     @Inject
     @Named("current")
     private DocumentReferenceResolver<EntityReference> resolver;
 
+    /**
+     * @return the XWiki object containing the configuration
+     * @throws XWikiException when failing to get the object
+     */
     private BaseObject getConfigurationObject() throws XWikiException
     {
         XWikiContext xcontext = this.xcontextProvider.get();
@@ -75,7 +85,7 @@ public class DefaultRepositoryConfiguration implements RepositoryConfiguration
     {
         BaseObject obj = getConfigurationObject();
 
-        return obj != null ? obj.getListValue(XWikiRepositoryModel.PROP_CONFIGURATION_DEFAULTIDPREFIX) : Collections
+        return obj != null ? obj.getListValue(XWikiRepositoryModel.PROP_CONFIGURATION_VALIDTYPEs) : Collections
             .<String> emptyList();
     }
 
