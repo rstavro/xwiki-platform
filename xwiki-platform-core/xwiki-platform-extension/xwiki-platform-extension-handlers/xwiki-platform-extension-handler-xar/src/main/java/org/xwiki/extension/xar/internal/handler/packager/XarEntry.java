@@ -23,7 +23,6 @@ import java.util.Locale;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.xwiki.model.EntityType;
 import org.xwiki.model.reference.EntityReference;
 
 /**
@@ -40,13 +39,6 @@ public class XarEntry
 
     public XarEntry()
     {
-    }
-
-    public XarEntry(String space, String page, Locale locale)
-    {
-        this.documentReference =
-            new EntityReference(page, EntityType.DOCUMENT, new EntityReference(space, EntityType.SPACE));
-        this.locale = locale;
     }
 
     public XarEntry(EntityReference documentReference, Locale locale)

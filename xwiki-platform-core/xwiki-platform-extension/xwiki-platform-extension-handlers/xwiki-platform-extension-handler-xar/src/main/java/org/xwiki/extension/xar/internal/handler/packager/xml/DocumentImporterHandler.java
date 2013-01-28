@@ -156,10 +156,12 @@ public class DocumentImporterHandler extends DocumentHandler
         XWikiDocument previousDocument = null;
 
         XWikiDocument document = getDocument();
-        XarEntry xarEntry = new XarEntry(document.getSpace(), document.getName(), document.getLocale());
+        DocumentReference documentReference = document.getDocumentReference();
+        WikiReference wikiReference = documentReference.getWikiReference();
+        XarEntry xarEntry = new XarEntry(documentReference.removeParent(wikiReference), document.getLocale());
         XarFile previousXarFile = this.configuration.getPreviousPages().get(xarEntry);
         if (previousXarFile != null) {
-            DocumentHandler documentHandler = new DocumentHandler(getComponentManager(), document.getWikiName());
+            DocumentHandler documentHandler = new DocumentHandler(getComponentManager(), wikiReference.getName());
 
             XarEntry realEntry = previousXarFile.getEntry(xarEntry.getDocumentReference(), xarEntry.getLocale());
             if (realEntry != null) {
